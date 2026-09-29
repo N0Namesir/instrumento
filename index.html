@@ -1,0 +1,1142 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0c">
+<title>Cronómetro EPI-Aetheris</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  --fondo: #ffffff;
+  --texto: #0b0b0c;
+  --suave: #3f3f46;
+  --panel: #f4f4f5;
+  --borde: #0b0b0c;
+  --trad: #1d4ed8;
+  --epi: #c2410c;
+  --ok: #15803d;
+  --stop: #b91c1c;
+  --adv: #facc15;
+  --neutro: #18181b;
+  --radio: 14px;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 18px;
+  line-height: 1.35;
+}
+h1, h2, h3, p { margin: 0; }
+.tarjeta, .modal, .campo { min-width: 0; overflow-wrap: anywhere; }
+button, input, textarea { font: inherit; color: inherit; }
+button { touch-action: manipulation; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: 0.4; }
+:focus-visible { outline: 4px solid #f59e0b; outline-offset: 2px; }
+
+#app { max-width: 720px; margin: 0 auto; }
+#app.ancha { max-width: 1240px; }
+.pantalla { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.pantalla-med { min-height: 100vh; min-height: 100dvh; padding: 0; gap: 0; }
+.contenido { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Botones */
+.btn {
+  display: block; width: 100%;
+  min-height: 64px; padding: 12px 18px;
+  border: 3px solid var(--borde); border-radius: var(--radio);
+  background: #fff; color: var(--texto);
+  font-size: 1.25rem; font-weight: 800; text-align: center;
+}
+.btn-principal { background: var(--neutro); color: #fff; }
+.btn-ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+.btn-stop { background: var(--stop); border-color: var(--stop); color: #fff; }
+.btn-sig { background: var(--neutro); border-color: var(--neutro); color: #fff; }
+.btn-grande { min-height: 88px; font-size: 2.2rem; letter-spacing: 0.02em; }
+.btn-deshacer { min-height: 56px; font-size: 1.1rem; background: var(--adv); border-color: #000; color: #000; }
+.btn-chico { min-height: 52px; font-size: 1.05rem; }
+.fila { display: flex; gap: 10px; }
+.fila > * { flex: 1; }
+.fila-envuelta { flex-wrap: wrap; }
+.fila-envuelta > * { flex: 1 1 220px; }
+
+/* Inicio */
+.encabezado h1 { font-size: 1.7rem; line-height: 1.15; }
+.encabezado p { margin-top: 6px; color: var(--suave); }
+.tarjeta { border: 3px solid var(--borde); border-radius: var(--radio); padding: 14px; background: var(--panel); display: flex; flex-direction: column; gap: 10px; }
+.tarjeta h2 { font-size: 1.25rem; }
+form { display: flex; flex-direction: column; gap: 14px; }
+fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+legend { font-weight: 800; margin-bottom: 8px; padding: 0; }
+.opcion { display: block; position: relative; }
+.opcion input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.opcion span { display: block; border: 3px solid var(--borde); border-radius: var(--radio); padding: 12px 14px; background: #fff; }
+.opcion b { display: block; font-size: 1.25rem; }
+.opcion small { display: block; color: var(--suave); font-size: 0.95rem; margin-top: 2px; }
+.opcion input:checked + span { background: var(--neutro); color: #fff; }
+.opcion input:checked + span small { color: #e4e4e7; }
+.opcion input:focus-visible + span { outline: 4px solid #f59e0b; outline-offset: 2px; }
+.campo { display: flex; flex-direction: column; gap: 6px; font-weight: 800; }
+.campo input, .campo textarea {
+  width: 100%; min-height: 54px; padding: 10px 12px;
+  border: 3px solid var(--borde); border-radius: 12px; background: #fff; font-weight: 500;
+}
+.campo textarea { min-height: 84px; resize: vertical; }
+.error { color: var(--stop); font-weight: 800; min-height: 1.35em; }
+.aviso-almac { background: var(--adv); color: #111; font-weight: 800; padding: 10px 16px; border-bottom: 3px solid #111; }
+
+/* Medición */
+.progreso { padding: 12px 16px 10px; border-bottom: 3px solid var(--borde); background: #fff; }
+.progreso-texto { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-weight: 800; }
+.progreso-texto b { font-size: 1.25rem; }
+.progreso-texto span { color: var(--suave); font-size: 0.95rem; font-weight: 600; }
+.progreso-barra { height: 10px; margin-top: 8px; border: 2px solid var(--borde); border-radius: 6px; overflow: hidden; background: #fff; }
+.progreso-barra i { display: block; height: 100%; background: var(--borde); }
+.consulta { font-size: 1.55rem; font-weight: 700; line-height: 1.2; }
+.consulta .num { display: block; font-size: 1.15rem; color: var(--suave); font-weight: 800; }
+.consulta .datos b { font-weight: 900; }
+.metodo { border-radius: var(--radio); padding: 12px 16px; color: #fff; display: flex; flex-direction: column; gap: 4px; border: 3px solid #000; }
+.metodo.m-trad { background: var(--trad); }
+.metodo.m-epi { background: var(--epi); }
+.metodo-fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.metodo-nombre { font-size: clamp(1.8rem, 9vw, 2.6rem); font-weight: 900; line-height: 1.05; }
+.metodo-orden { flex: none; background: #fff; color: #000; border-radius: 10px; padding: 4px 12px; font-size: 1.5rem; font-weight: 900; }
+.metodo-punto { font-size: 1.05rem; font-weight: 600; }
+
+.contador { border-radius: var(--radio); border: 3px solid #000; padding: 10px 16px; text-align: center; background: var(--neutro); color: #fff; }
+.contador-etq { font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.95rem; }
+.contador-valor { font-size: clamp(4rem, 22vw, 6.5rem); font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; margin: 2px 0; }
+.contador-msg { font-size: 1.05rem; font-weight: 700; }
+.contador.pendiente { background: var(--panel); color: var(--suave); }
+.contador.nivel-advertencia { background: var(--adv); color: #111; }
+.contador.nivel-limite { background: var(--stop); color: #fff; }
+
+.resultado { display: flex; flex-direction: column; gap: 10px; }
+.dato { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; column-gap: 12px; min-width: 0; border: 3px solid var(--borde); border-radius: var(--radio); padding: 6px 14px; background: #fff; }
+.dato-etq { font-size: 1.05rem; font-weight: 800; color: var(--suave); }
+.dato-val { white-space: nowrap; font-size: clamp(1.9rem, 9vw, 2.6rem); font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.dato.tiempo { background: var(--neutro); border-color: var(--neutro); color: #fff; padding-top: 8px; padding-bottom: 8px; }
+.dato.tiempo .dato-etq { color: #e4e4e7; }
+.dato.tiempo .dato-val { font-size: clamp(3.2rem, 17vw, 4.8rem); line-height: 1; }
+.etiqueta-ne { background: var(--stop); color: #fff; font-weight: 900; font-size: 1.4rem; text-align: center; padding: 10px; border-radius: var(--radio); border: 3px solid #000; text-transform: uppercase; letter-spacing: 0.04em; }
+.alerta-limite { background: var(--stop); color: #fff; border: 4px solid #000; border-radius: var(--radio); padding: 14px 16px; font-size: 1.2rem; }
+.alerta-limite b { display: block; font-size: 1.5rem; text-transform: uppercase; }
+
+.barra { margin-top: auto; position: sticky; bottom: 0; background: #fff; border-top: 3px solid var(--borde); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+.pie { color: var(--suave); font-size: 0.9rem; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.hint-teclado { display: none; }
+@media (hover: hover) and (pointer: fine) { .hint-teclado { display: inline; } }
+
+/* Resumen */
+.info { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
+.info dt { font-weight: 800; }
+.info dd { margin: 0; overflow-wrap: anywhere; }
+.tabla-cont { overflow-x: auto; border: 3px solid var(--borde); border-radius: var(--radio); background: #fff; -webkit-overflow-scrolling: touch; }
+.tabla { border-collapse: collapse; width: 100%; min-width: 860px; font-size: 1rem; }
+.tabla th, .tabla td { padding: 8px 10px; border-bottom: 1px solid #a1a1aa; text-align: left; vertical-align: top; white-space: nowrap; background: #fff; }
+.tabla th { background: var(--neutro); color: #fff; font-size: 0.9rem; }
+.tabla td:last-child, .tabla td:nth-last-child(2) { white-space: normal; }
+.tabla td:nth-last-child(2) { min-width: 180px; }
+.tabla td.num, .tabla th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tabla th:first-child, .tabla td:first-child { position: sticky; left: 0; z-index: 1; }
+.tabla tr.par td { background: var(--panel); }
+.tabla tr.actual td { background: #fef08a; }
+.tabla td.trad { border-left: 8px solid var(--trad); }
+.tabla td.epi { border-left: 8px solid var(--epi); }
+.tabla tr.fin-consulta td { border-bottom: 3px solid var(--borde); }
+.tabla td.ne { color: var(--stop); font-weight: 900; }
+.tabla .enlace { min-width: 44px; min-height: 40px; border: 2px solid var(--borde); border-radius: 8px; background: #fff; font-weight: 900; }
+
+/* Diálogo y avisos */
+.modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+.modal { background: #fff; border: 4px solid #000; border-radius: var(--radio); padding: 18px; width: 100%; max-width: 480px; max-height: 92vh; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+.modal h2 { font-size: 1.4rem; }
+.modal-botones { display: flex; flex-direction: column; gap: 8px; }
+#aviso { position: fixed; left: 50%; top: 12px; transform: translateX(-50%); background: #000; color: #fff; padding: 10px 18px; border-radius: 12px; font-weight: 700; z-index: 60; max-width: 92vw; text-align: center; }
+#aviso[hidden] { display: none; }
+
+body.destello::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 40; background: rgba(185, 28, 28, 0.55); animation: destello 0.5s steps(2, jump-none) 6; }
+@keyframes destello { 0% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { body.destello::after { animation: none; opacity: 0.35; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="aviso" role="status" aria-live="polite" hidden></div>
+
+<!-- Lógica pura: sin DOM, sin reloj propio (siempre recibe "ahora"). tests.mjs extrae y prueba este bloque. -->
+<script id="logica">
+/* LOGICA-PURA:INICIO */
+const EPI = (() => {
+  'use strict';
+
+  const ESQUEMA = 1;
+  const LIMITE_S = 300;        // tiempo máximo por medición
+  const ADVERTENCIA_S = 240;   // a partir de aquí el contador cambia de color
+  const TRADICIONAL = 'Tradicional';
+  const EPI_AETHERIS = 'EPI-Aetheris';
+
+  const VERSIONES = {
+    equipo: { etiqueta: 'Equipo', ns: null },
+    externo: { etiqueta: 'Evaluador externo', ns: [2, 4, 7, 9, 18] }
+  };
+
+  const CONSULTAS = Object.freeze([
+    [1, 'La Unión', 49, 2023], [2, 'Usulután', 33, 2022], [3, 'Santa Ana', 18, 2018],
+    [4, 'San Salvador', 51, 2021], [5, 'Sonsonate', 13, 2022], [6, 'San Salvador', 6, 2023],
+    [7, 'Sonsonate', 37, 2019], [8, 'La Libertad', 19, 2021], [9, 'San Salvador', 16, 2023],
+    [10, 'Morazán', 38, 2021], [11, 'La Libertad', 40, 2019], [12, 'La Libertad', 5, 2019],
+    [13, 'La Libertad', 17, 2022], [14, 'Morazán', 48, 2021], [15, 'San Salvador', 40, 2018],
+    [16, 'La Paz', 46, 2023], [17, 'La Paz', 10, 2019], [18, 'San Salvador', 38, 2018],
+    [19, 'Cabañas', 42, 2018], [20, 'Sonsonate', 21, 2022]
+  ].map(([n, departamento, se, anio]) => Object.freeze({ n, departamento, se, anio })));
+
+  const COLUMNAS_CSV = [
+    'version', 'operador', 'supervisor', 'fecha', 'lugar', 'n', 'departamento', 'se', 'anio',
+    'metodo', 'orden', 'hora_inicio', 'hora_fin', 'tiempo_s', 'no_encontrado', 'repeticiones',
+    'observaciones', 'inicio_epoch_ms', 'fin_epoch_ms'
+  ];
+
+  const clonar = (o) => JSON.parse(JSON.stringify(o));
+  const pad2 = (n) => String(n).padStart(2, '0');
+
+  // ---------- Horas y tiempos ----------
+
+  // Hora local en 24 h, hh:mm:ss, truncando (no redondeando) los milisegundos.
+  function formatHora(ms) {
+    if (ms == null || !Number.isFinite(ms)) return '';
+    const d = new Date(Math.floor(ms / 1000) * 1000);
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+  }
+
+  // Tiempo (s) = diferencia entre las dos horas YA truncadas a segundos.
+  function calcularSegundos(inicioMs, finMs) {
+    return Math.max(0, Math.floor(finMs / 1000) - Math.floor(inicioMs / 1000));
+  }
+
+  // Segundos transcurridos reales (para el contador en pantalla).
+  function segundosTranscurridos(inicioMs, ahoraMs) {
+    return Math.max(0, Math.floor((ahoraMs - inicioMs) / 1000));
+  }
+
+  function limiteAlcanzado(inicioMs, ahoraMs) {
+    return ahoraMs - inicioMs >= LIMITE_S * 1000;
+  }
+
+  function nivelContador(segundos) {
+    if (segundos >= LIMITE_S) return 'limite';
+    if (segundos >= ADVERTENCIA_S) return 'advertencia';
+    return 'normal';
+  }
+
+  // m:ss para el contador grande.
+  function formatContador(segundos) {
+    const s = Math.max(0, Math.floor(segundos));
+    return Math.floor(s / 60) + ':' + pad2(s % 60);
+  }
+
+  function fechaLocalISO(ms) {
+    const d = new Date(ms);
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  // ---------- Consultas, orden de métodos y mediciones ----------
+
+  // Impar: 1.º Tradicional, 2.º EPI-Aetheris. Par: al revés. Depende del N.º ORIGINAL.
+  function ordenMetodos(n) {
+    if (!Number.isInteger(n) || n < 1) throw new Error('N.º de consulta inválido: ' + n);
+    return n % 2 === 1 ? [TRADICIONAL, EPI_AETHERIS] : [EPI_AETHERIS, TRADICIONAL];
+  }
+
+  function consultasDeVersion(version) {
+    if (!Object.prototype.hasOwnProperty.call(VERSIONES, version)) {
+      throw new Error('Versión desconocida: ' + version);
+    }
+    const ns = VERSIONES[version].ns;
+    return CONSULTAS.filter((c) => !ns || ns.includes(c.n)).map((c) => ({ ...c }));
+  }
+
+  function medicionVacia(consulta, metodo, orden) {
+    return {
+      n: consulta.n,
+      departamento: consulta.departamento,
+      se: consulta.se,
+      anio: consulta.anio,
+      metodo,
+      orden,
+      inicioMs: null,
+      finMs: null,
+      tiempoS: null,
+      noEncontrado: false,
+      cortada: false,          // true si se detuvo sola por llegar al límite
+      observaciones: '',
+      repeticiones: 0
+    };
+  }
+
+  // Mismo orden que la ficha de papel: consulta por consulta, con sus dos métodos.
+  function generarMediciones(version) {
+    const out = [];
+    for (const c of consultasDeVersion(version)) {
+      ordenMetodos(c.n).forEach((metodo, i) => out.push(medicionVacia(c, metodo, i + 1)));
+    }
+    return out;
+  }
+
+  function estadoMedicion(m) {
+    if (m.inicioMs == null) return 'pendiente';
+    if (m.finMs == null) return 'en_curso';
+    return 'terminada';
+  }
+
+  // Qué hace el botón principal / la barra espaciadora con esta medición.
+  function accionPrincipal(m) {
+    const e = estadoMedicion(m);
+    if (e === 'pendiente') return 'iniciar';
+    if (e === 'en_curso') return 'detener';
+    return null; // ya tiene datos: primero hay que "Repetir medición"
+  }
+
+  // Cierra una medición en curso. Si ya se llegó al límite, se corta a exactamente 300 s.
+  function detenerMedicion(m, ahoraMs) {
+    if (limiteAlcanzado(m.inicioMs, ahoraMs)) {
+      const finMs = m.inicioMs + LIMITE_S * 1000;
+      return { ...m, finMs, tiempoS: calcularSegundos(m.inicioMs, finMs), noEncontrado: true, cortada: true };
+    }
+    const finMs = Math.max(ahoraMs, m.inicioMs);
+    return { ...m, finMs, tiempoS: calcularSegundos(m.inicioMs, finMs), cortada: false };
+  }
+
+  // ---------- Sesión ----------
+
+  function validarDatosSesion(d) {
+    const errores = [];
+    if (!d || !Object.prototype.hasOwnProperty.call(VERSIONES, d.version)) errores.push('Elija la versión de la sesión.');
+    if (!String((d && d.operador) || '').trim()) errores.push('Escriba el nombre del operador.');
+    if (!String((d && d.supervisor) || '').trim()) errores.push('Escriba el nombre del supervisor.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String((d && d.fecha) || ''))) errores.push('Indique la fecha.');
+    return errores;
+  }
+
+  function crearSesion(datos, ahoraMs) {
+    return {
+      esquema: ESQUEMA,
+      version: datos.version,
+      operador: String(datos.operador).trim(),
+      supervisor: String(datos.supervisor).trim(),
+      fecha: datos.fecha,
+      lugar: String(datos.lugar || '').trim(),
+      sesionInicioMs: ahoraMs,
+      sesionFinMs: null,
+      actual: 0,
+      mediciones: generarMediciones(datos.version),
+      registro: [],   // intentos anteriores de mediciones repetidas (nunca se borran)
+      undo: null
+    };
+  }
+
+  function esEstadoValido(e) {
+    if (!e || typeof e !== 'object' || e.esquema !== ESQUEMA) return false;
+    if (!Object.prototype.hasOwnProperty.call(VERSIONES, e.version)) return false;
+    if (!Array.isArray(e.mediciones) || !Array.isArray(e.registro)) return false;
+    const esperadas = generarMediciones(e.version);
+    if (e.mediciones.length !== esperadas.length) return false;
+    if (!Number.isInteger(e.actual) || e.actual < 0 || e.actual >= e.mediciones.length) return false;
+    const num = (v) => v == null || Number.isFinite(v);
+    return e.mediciones.every((m, i) => m && typeof m === 'object'
+      && m.n === esperadas[i].n && m.metodo === esperadas[i].metodo && m.orden === esperadas[i].orden
+      && num(m.inicioMs) && num(m.finMs));
+  }
+
+  function indiceEnCurso(e) {
+    return e.mediciones.findIndex((m) => estadoMedicion(m) === 'en_curso');
+  }
+
+  function progreso(e) {
+    const completadas = e.mediciones.filter((m) => estadoMedicion(m) === 'terminada').length;
+    return { completadas, total: e.mediciones.length, enCurso: indiceEnCurso(e) !== -1 };
+  }
+
+  // ---------- Acciones (devuelven un estado nuevo; no modifican el recibido) ----------
+
+  function guardarUndo(e, tipo, descripcion) {
+    e.undo = {
+      tipo,
+      descripcion,
+      idx: e.actual,
+      medicion: clonar(e.mediciones[e.actual]),
+      registroLen: e.registro.length,
+      sesionFinMs: e.sesionFinMs
+    };
+  }
+
+  function accionIniciar(estado, ahoraMs) {
+    const m = estado.mediciones[estado.actual];
+    if (estadoMedicion(m) !== 'pendiente' || indiceEnCurso(estado) !== -1) return estado;
+    const e = clonar(estado);
+    guardarUndo(e, 'iniciar', 'Iniciar');
+    e.mediciones[e.actual].inicioMs = ahoraMs;
+    e.sesionFinMs = null;
+    return e;
+  }
+
+  function accionDetener(estado, ahoraMs) {
+    const m = estado.mediciones[estado.actual];
+    if (estadoMedicion(m) !== 'en_curso') return estado;
+    const e = clonar(estado);
+    guardarUndo(e, 'detener', 'Detener');
+    e.mediciones[e.actual] = detenerMedicion(e.mediciones[e.actual], ahoraMs);
+    if (e.mediciones[e.actual].cortada) e.undo = null; // fue un corte por límite, no un error del supervisor
+    return e;
+  }
+
+  // Corte automático a 300 s. Si no hay nada que cortar devuelve el mismo estado.
+  function accionAutoCorte(estado, ahoraMs) {
+    const idx = indiceEnCurso(estado);
+    if (idx === -1 || !limiteAlcanzado(estado.mediciones[idx].inicioMs, ahoraMs)) return estado;
+    const e = clonar(estado);
+    e.mediciones[idx] = detenerMedicion(e.mediciones[idx], ahoraMs);
+    e.actual = idx;
+    e.undo = null;
+    return e;
+  }
+
+  function accionNoEncontrado(estado) {
+    const m = estado.mediciones[estado.actual];
+    if (estadoMedicion(m) !== 'terminada' || m.cortada) return estado; // la cortada por límite queda fija
+    const e = clonar(estado);
+    guardarUndo(e, 'noencontrado', m.noEncontrado ? 'Quitar marca No encontrado' : 'Marcar No encontrado');
+    e.mediciones[e.actual].noEncontrado = !m.noEncontrado;
+    return e;
+  }
+
+  // El intento anterior se archiva en el registro; la medición queda lista para repetirse.
+  function accionRepetir(estado, ahoraMs) {
+    const m = estado.mediciones[estado.actual];
+    if (estadoMedicion(m) === 'pendiente') return estado;
+    const e = clonar(estado);
+    guardarUndo(e, 'repetir', 'Repetir medición');
+    e.registro.push({
+      indice: e.actual,
+      n: m.n,
+      departamento: m.departamento,
+      se: m.se,
+      anio: m.anio,
+      metodo: m.metodo,
+      orden: m.orden,
+      intento: m.repeticiones + 1,
+      inicioMs: m.inicioMs,
+      finMs: m.finMs,
+      tiempoS: m.tiempoS,
+      noEncontrado: m.noEncontrado,
+      cortada: m.cortada,
+      interrumpida: m.finMs == null,
+      observaciones: m.observaciones,
+      archivadoMs: ahoraMs
+    });
+    e.mediciones[e.actual] = {
+      ...m,
+      inicioMs: null,
+      finMs: null,
+      tiempoS: null,
+      noEncontrado: false,
+      cortada: false,
+      observaciones: '',
+      repeticiones: m.repeticiones + 1
+    };
+    e.sesionFinMs = null;
+    return e;
+  }
+
+  function accionDeshacer(estado) {
+    const u = estado.undo;
+    if (!u) return estado;
+    const e = clonar(estado);
+    const actualObs = e.mediciones[u.idx].observaciones;
+    e.mediciones[u.idx] = clonar(u.medicion);
+    // Lo escrito en "Observaciones" después de la acción no se pierde (salvo al deshacer una repetición).
+    if (u.tipo !== 'repetir') e.mediciones[u.idx].observaciones = actualObs;
+    e.registro.length = u.registroLen;
+    e.sesionFinMs = u.sesionFinMs;
+    e.actual = u.idx;
+    e.undo = null;
+    return e;
+  }
+
+  // Cambiar de medición cierra la posibilidad de deshacer. No se puede salir de una medición en curso.
+  function accionIr(estado, idx) {
+    const enCurso = indiceEnCurso(estado);
+    const destino = Math.min(Math.max(idx, 0), estado.mediciones.length - 1);
+    if (enCurso !== -1 && destino !== enCurso) return estado;
+    if (destino === estado.actual) return estado; // no es cambiar de medición: el Deshacer sigue disponible
+    const e = clonar(estado);
+    e.actual = destino;
+    e.undo = null;
+    return e;
+  }
+
+  function accionObservaciones(estado, texto) {
+    const e = clonar(estado);
+    e.mediciones[e.actual].observaciones = String(texto);
+    return e;
+  }
+
+  function accionFinalizar(estado, ahoraMs) {
+    if (indiceEnCurso(estado) !== -1) return estado;
+    const e = clonar(estado);
+    e.sesionFinMs = ahoraMs;
+    e.undo = null;
+    return e;
+  }
+
+  // ---------- Exportación ----------
+
+  function escaparCSV(valor) {
+    if (valor == null) return '';
+    const s = String(valor);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function filaCSV(e, m) {
+    const medida = m.inicioMs != null;
+    return [
+      e.version, e.operador, e.supervisor, e.fecha, e.lugar,
+      m.n, m.departamento, m.se, m.anio, m.metodo, m.orden,
+      formatHora(m.inicioMs), formatHora(m.finMs),
+      m.tiempoS == null ? '' : m.tiempoS,
+      medida ? (m.noEncontrado ? 1 : 0) : '',
+      m.repeticiones,
+      m.observaciones,
+      m.inicioMs == null ? '' : m.inicioMs,
+      m.finMs == null ? '' : m.finMs
+    ];
+  }
+
+  // UTF-8 con BOM (para que LibreOffice/Excel muestren bien los acentos), separador coma.
+  function generarCSV(e) {
+    const filas = [COLUMNAS_CSV, ...e.mediciones.map((m) => filaCSV(e, m))];
+    return '﻿' + filas.map((f) => f.map(escaparCSV).join(',')).join('\r\n') + '\r\n';
+  }
+
+  // Estado completo (incluido el registro de repeticiones), con las horas ya legibles.
+  function generarJSON(e, ahoraMs) {
+    const { undo, ...resto } = e;
+    const conHoras = (x) => ({ ...x, horaInicio: formatHora(x.inicioMs), horaFin: formatHora(x.finMs) });
+    return JSON.stringify({
+      aplicacion: 'Cronómetro EPI-Aetheris',
+      exportadoMs: ahoraMs,
+      ...resto,
+      sesionHoraInicio: formatHora(e.sesionInicioMs),
+      sesionHoraFin: formatHora(e.sesionFinMs),
+      mediciones: e.mediciones.map(conHoras),
+      registro: e.registro.map(conHoras)
+    }, null, 2);
+  }
+
+  function slugTexto(texto, respaldo) {
+    const s = String(texto == null ? '' : texto)
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return s || respaldo;
+  }
+
+  // cronometro_<version>_<fecha>_<operador>.<ext>
+  function nombreArchivo(e, ext) {
+    const fecha = String(e.fecha || '').replace(/[^0-9-]/g, '') || 'sin-fecha';
+    return 'cronometro_' + e.version + '_' + fecha + '_' + slugTexto(e.operador, 'sin-operador') + '.' + ext;
+  }
+
+  return {
+    ESQUEMA, LIMITE_S, ADVERTENCIA_S, TRADICIONAL, EPI_AETHERIS, VERSIONES, CONSULTAS, COLUMNAS_CSV,
+    formatHora, calcularSegundos, segundosTranscurridos, limiteAlcanzado, nivelContador, formatContador,
+    fechaLocalISO, ordenMetodos, consultasDeVersion, generarMediciones, estadoMedicion, accionPrincipal,
+    detenerMedicion, validarDatosSesion, crearSesion, esEstadoValido, indiceEnCurso, progreso,
+    accionIniciar, accionDetener, accionAutoCorte, accionNoEncontrado, accionRepetir, accionDeshacer,
+    accionIr, accionObservaciones, accionFinalizar,
+    escaparCSV, generarCSV, generarJSON, slugTexto, nombreArchivo
+  };
+})();
+/* LOGICA-PURA:FIN */
+</script>
+
+<!-- Interfaz -->
+<script>
+(() => {
+  'use strict';
+
+  const CLAVE = 'epi-aetheris-cronometro-v1';
+  const PUNTO_PARTIDA = {
+    [EPI.TRADICIONAL]: 'Carpeta de boletines abierta',
+    [EPI.EPI_AETHERIS]: 'Página principal del tablero abierta'
+  };
+
+  let estado = null;          // sesión guardada (o null)
+  let vista = 'inicio';       // 'inicio' | 'medicion' | 'resumen'
+  let modoNueva = false;      // mostrando el formulario aunque haya una sesión guardada
+  let borrador = borradorVacio();
+  let almacenamientoOk = true;
+  let modalAbierto = false;
+  let ticker = null;
+  let claveScroll = '';
+
+  // Pantalla siempre encendida
+  let wakeLock = null;
+  let pantallaEstado = 'inactiva'; // 'inactiva' | 'activa' | 'no disponible'
+
+  // Audio
+  let audioCtx = null;
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (t) => String(t == null ? '' : t)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const medActual = () => estado.mediciones[estado.actual];
+  const estadoMedicion = EPI.estadoMedicion;
+
+  function borradorVacio() {
+    return { version: '', operador: '', supervisor: '', fecha: EPI.fechaLocalISO(Date.now()), lugar: '' };
+  }
+
+  // ---------- Persistencia ----------
+
+  function cargar() {
+    try {
+      const texto = localStorage.getItem(CLAVE);
+      if (!texto) return null;
+      const e = JSON.parse(texto);
+      if (!EPI.esEstadoValido(e)) return null;
+      if (!('undo' in e)) e.undo = null;
+      return e;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function guardar() {
+    try {
+      localStorage.setItem(CLAVE, JSON.stringify(estado));
+      almacenamientoOk = true;
+    } catch (_) {
+      almacenamientoOk = false;
+    }
+  }
+
+  function aplicar(nuevo) {
+    estado = nuevo;
+    guardar();
+    render();
+  }
+
+  // ---------- Avisos, diálogo, sonido ----------
+
+  let avisoTimer = null;
+  function avisar(texto) {
+    const el = $('aviso');
+    el.textContent = texto;
+    el.hidden = false;
+    clearTimeout(avisoTimer);
+    avisoTimer = setTimeout(() => { el.hidden = true; }, 3200);
+  }
+
+  // botones: [{ texto, clase, valor }] o [{ texto, clase, accion }] (la acción no cierra el diálogo)
+  function dialogo({ titulo, mensaje, botones }) {
+    return new Promise((resolve) => {
+      const fondo = document.createElement('div');
+      fondo.className = 'modal-fondo';
+      fondo.innerHTML = '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">'
+        + '<h2 id="modal-titulo">' + esc(titulo) + '</h2>'
+        + '<p>' + esc(mensaje) + '</p>'
+        + '<div class="modal-botones">'
+        + botones.map((b, i) => '<button type="button" class="btn ' + esc(b.clase || '') + '" data-i="' + i + '">' + esc(b.texto) + '</button>').join('')
+        + '</div></div>';
+      const cerrar = (valor) => {
+        document.removeEventListener('keydown', teclas, true);
+        fondo.remove();
+        modalAbierto = false;
+        resolve(valor);
+      };
+      const teclas = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); cerrar('cancelar'); } };
+      fondo.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('button[data-i]');
+        if (!btn) return;
+        const b = botones[Number(btn.dataset.i)];
+        if (b.accion) b.accion(); else cerrar(b.valor);
+      });
+      modalAbierto = true;
+      document.addEventListener('keydown', teclas, true);
+      document.body.appendChild(fondo);
+      const cancelar = botones.findIndex((b) => b.valor === 'cancelar');
+      fondo.querySelector('button[data-i="' + (cancelar === -1 ? 0 : cancelar) + '"]').focus();
+    });
+  }
+
+  function prepararAudio() {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (_) { /* sin audio: no es crítico */ }
+  }
+
+  function sonidoLimite() {
+    try {
+      prepararAudio();
+      if (!audioCtx) return;
+      const t0 = audioCtx.currentTime;
+      for (let i = 0; i < 3; i++) {
+        const t = t0 + i * 0.28;
+        const osc = audioCtx.createOscillator();
+        const gan = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = 880;
+        gan.gain.setValueAtTime(0.0001, t);
+        gan.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+        gan.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+        osc.connect(gan);
+        gan.connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + 0.22);
+      }
+    } catch (_) { /* sin audio */ }
+  }
+
+  function alertaLimite() {
+    document.body.classList.add('destello');
+    setTimeout(() => document.body.classList.remove('destello'), 3200);
+    try { if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 700]); } catch (_) { /* sin vibración */ }
+    sonidoLimite();
+  }
+
+  // ---------- Pantalla siempre encendida ----------
+
+  function actualizarEstadoPantalla() {
+    const el = $('estado-pantalla');
+    if (el) el.textContent = pantallaEstado === 'activa' ? 'Pantalla: se mantiene encendida.'
+      : pantallaEstado === 'no disponible' ? 'Pantalla: este navegador no evita que se apague.' : '';
+  }
+
+  async function pedirWakeLock() {
+    try {
+      if (!('wakeLock' in navigator) || !navigator.wakeLock) {
+        pantallaEstado = 'no disponible';
+      } else if (!wakeLock || wakeLock.released) {
+        wakeLock = await navigator.wakeLock.request('screen');
+        pantallaEstado = 'activa';
+        wakeLock.addEventListener('release', () => { pantallaEstado = 'inactiva'; actualizarEstadoPantalla(); });
+      }
+    } catch (_) {
+      pantallaEstado = 'no disponible';
+    }
+    actualizarEstadoPantalla();
+  }
+
+  // ---------- Vistas ----------
+
+  function htmlInicio() {
+    const sesion = estado && !modoNueva;
+    let html = '<main class="pantalla">'
+      + '<header class="encabezado"><h1>Cronómetro de prueba comparativa</h1>'
+      + '<p>EPI-Aetheris: método Tradicional (boletines PDF del MINSAL) frente al tablero web.</p></header>';
+
+    if (sesion) {
+      const p = EPI.progreso(estado);
+      html += '<section class="tarjeta"><h2>Sesión guardada</h2><dl class="info">'
+        + '<dt>Versión</dt><dd>' + esc(EPI.VERSIONES[estado.version].etiqueta) + '</dd>'
+        + '<dt>Operador</dt><dd>' + esc(estado.operador) + '</dd>'
+        + '<dt>Supervisor</dt><dd>' + esc(estado.supervisor) + '</dd>'
+        + '<dt>Fecha</dt><dd>' + esc(estado.fecha) + '</dd>'
+        + '<dt>Avance</dt><dd>' + p.completadas + ' de ' + p.total + ' mediciones completas'
+        + (p.enCurso ? ' (hay una en curso)' : '') + '</dd></dl>'
+        + '<button type="button" class="btn btn-principal" data-accion="continuar">Continuar sesión</button>'
+        + '<button type="button" class="btn" data-accion="nueva">Nueva sesión</button></section>';
+    } else {
+      html += '<form id="form-sesion" novalidate>'
+        + '<fieldset><legend>Versión de la sesión</legend>'
+        + opcionVersion('equipo', 'Equipo', '20 consultas, 40 mediciones')
+        + opcionVersion('externo', 'Evaluador externo', '5 consultas (N.º 2, 4, 7, 9 y 18), 10 mediciones')
+        + '</fieldset>'
+        + campo('operador', 'Operador', 'text')
+        + campo('supervisor', 'Supervisor', 'text')
+        + campo('fecha', 'Fecha', 'date')
+        + campo('lugar', 'Lugar', 'text')
+        + '<p class="error" id="error-form" role="alert"></p>'
+        + (estado ? '<p>La sesión guardada se reemplazará al comenzar esta nueva.</p>' : '')
+        + '<button type="submit" class="btn btn-principal">Comenzar sesión</button>'
+        + (estado ? '<button type="button" class="btn" data-accion="cancelar-nueva">Volver a la sesión guardada</button>' : '')
+        + '</form>';
+    }
+    return html + '</main>';
+  }
+
+  function opcionVersion(valor, titulo, detalle) {
+    return '<label class="opcion"><input type="radio" name="version" value="' + valor + '" data-campo="version"'
+      + (borrador.version === valor ? ' checked' : '') + '><span><b>' + esc(titulo) + '</b><small>' + esc(detalle) + '</small></span></label>';
+  }
+
+  function campo(nombre, etiqueta, tipo) {
+    return '<label class="campo">' + esc(etiqueta)
+      + '<input type="' + tipo + '" name="' + nombre + '" data-campo="' + nombre + '" value="' + esc(borrador[nombre]) + '"'
+      + (tipo === 'text' ? ' autocomplete="off" autocapitalize="words"' : '') + '></label>';
+  }
+
+  function textoContador(m, seg) {
+    if (estadoMedicion(m) === 'pendiente') return 'Límite por medición: ' + EPI.formatContador(EPI.LIMITE_S);
+    if (seg >= EPI.ADVERTENCIA_S) return 'Advertencia: quedan ' + Math.max(0, EPI.LIMITE_S - seg) + ' s';
+    return 'Inicio ' + EPI.formatHora(m.inicioMs) + ' · Límite ' + EPI.formatContador(EPI.LIMITE_S);
+  }
+
+  function htmlMedicion() {
+    const m = medActual();
+    const total = estado.mediciones.length;
+    const est = estadoMedicion(m);
+    const p = EPI.progreso(estado);
+    const esTrad = m.metodo === EPI.TRADICIONAL;
+    const ultima = estado.actual === total - 1;
+
+    let panel;
+    if (est === 'terminada') {
+      panel = '<section class="resultado" aria-label="Datos para la ficha">'
+        + '<div class="dato"><span class="dato-etq">Hora de inicio</span><span class="dato-val">' + EPI.formatHora(m.inicioMs) + '</span></div>'
+        + '<div class="dato"><span class="dato-etq">Hora de fin</span><span class="dato-val">' + EPI.formatHora(m.finMs) + '</span></div>'
+        + '<div class="dato tiempo"><span class="dato-etq">Tiempo (s)</span><span class="dato-val">' + m.tiempoS + '</span></div>'
+        + (m.noEncontrado ? '<div class="etiqueta-ne">No encontrado</div>' : '')
+        + '</section>'
+        + (m.cortada ? '<div class="alerta-limite" role="alert"><b>Tiempo máximo alcanzado</b>La medición se detuvo sola a los '
+          + EPI.LIMITE_S + ' s y quedó marcada como No encontrado.</div>' : '');
+    } else {
+      const seg = est === 'en_curso' ? EPI.segundosTranscurridos(m.inicioMs, Date.now()) : 0;
+      panel = '<section id="contador" class="contador ' + est + ' nivel-' + EPI.nivelContador(seg) + '" role="timer" aria-label="Tiempo transcurrido">'
+        + '<div class="contador-etq" id="contador-etq">' + (est === 'en_curso' ? 'Medición en curso' : 'Listo para iniciar') + '</div>'
+        + '<div class="contador-valor" id="contador-valor">' + EPI.formatContador(seg) + '</div>'
+        + '<div class="contador-msg" id="contador-msg">' + esc(textoContador(m, seg)) + '</div></section>';
+    }
+
+    // Orden pensado para el celular: primero lo que corrige un error (Deshacer), luego el resto.
+    let acciones = '';
+    if (estado.undo) {
+      acciones += '<button type="button" class="btn ' + (est === 'en_curso' ? 'btn-chico' : 'btn-deshacer') + '" data-accion="deshacer">Deshacer: ' + esc(estado.undo.descripcion) + '</button>';
+    }
+    const botones = [];
+    if (est === 'terminada') {
+      botones.push('<button type="button" class="btn btn-chico" data-accion="noencontrado"' + (m.cortada ? ' disabled' : '') + '>'
+        + (m.noEncontrado ? 'Quitar marca de No encontrado' : 'Marcar No encontrado') + '</button>');
+    }
+    if (est !== 'pendiente') {
+      botones.push('<button type="button" class="btn btn-chico" data-accion="repetir">Repetir medición</button>');
+    }
+    if (botones.length) acciones += '<div class="fila">' + botones.join('') + '</div>';
+    if (est === 'terminada') {
+      acciones += '<label class="campo">Observaciones (opcional)'
+        + '<textarea id="obs" data-campo="obs" rows="2">' + esc(m.observaciones) + '</textarea></label>';
+    }
+
+    let principal;
+    if (est === 'pendiente') principal = '<button type="button" class="btn btn-grande btn-ok" data-accion="principal">Iniciar</button>';
+    else if (est === 'en_curso') principal = '<button type="button" class="btn btn-grande btn-stop" data-accion="principal">Detener</button>';
+    else principal = '<button type="button" class="btn btn-grande btn-sig" data-accion="siguiente">' + (ultima ? 'Ver resumen' : 'Siguiente') + '</button>';
+
+    const bloqueado = est === 'en_curso';
+    return '<main class="pantalla pantalla-med">'
+      + (almacenamientoOk ? '' : '<div class="aviso-almac" role="alert">No se pudo guardar en el navegador. Exporte los datos con frecuencia.</div>')
+      + '<header class="progreso"><div class="progreso-texto"><b>Medición ' + (estado.actual + 1) + ' de ' + total + '</b>'
+      + '<span>' + p.completadas + ' completas</span></div>'
+      + '<div class="progreso-barra" aria-hidden="true"><i style="width:' + Math.round(p.completadas / total * 100) + '%"></i></div></header>'
+      + '<div class="contenido">'
+      + '<h1 class="consulta"><span class="num">Consulta N.º ' + m.n + '</span><span class="datos"><b>' + esc(m.departamento) + '</b>, SE ' + m.se + ', ' + m.anio + '</span></h1>'
+      + '<section class="metodo ' + (esTrad ? 'm-trad' : 'm-epi') + '"><div class="metodo-fila"><div class="metodo-nombre">' + esc(m.metodo) + '</div>'
+      + '<div class="metodo-orden" aria-label="Orden ' + m.orden + '">' + m.orden + '.º</div></div>'
+      + (est === 'terminada' ? '' : '<div class="metodo-punto">Punto de partida: ' + esc(PUNTO_PARTIDA[m.metodo]) + '</div>') + '</section>'
+      + panel + acciones
+      + '<div class="fila"><button type="button" class="btn btn-chico" data-accion="anterior"' + (estado.actual === 0 || bloqueado ? ' disabled' : '') + '>Anterior</button>'
+      + '<button type="button" class="btn btn-chico" data-accion="resumen">Resumen</button></div>'
+      + '<div class="pie"><span id="estado-pantalla"></span><span class="hint-teclado">Barra espaciadora: Iniciar / Detener</span></div>'
+      + '</div>'
+      + '<nav class="barra" aria-label="Acción principal">' + principal + '</nav></main>';
+  }
+
+  function htmlResumen() {
+    const p = EPI.progreso(estado);
+    const enCurso = EPI.indiceEnCurso(estado);
+    const filas = estado.mediciones.map((m, i) => {
+      const est = estadoMedicion(m);
+      const medida = est !== 'pendiente';
+      const guion = '&mdash;';
+      const clases = [(m.orden === 2 ? 'fin-consulta' : ''), (Math.ceil((i + 1) / 2) % 2 === 0 ? 'par' : ''), (i === estado.actual ? 'actual' : '')].filter(Boolean).join(' ');
+      const bloq = enCurso !== -1 && i !== enCurso;
+      return '<tr class="' + clases + '">'
+        + '<td class="num"><button type="button" class="enlace" data-accion="ir" data-idx="' + i + '"' + (bloq ? ' disabled' : '') + ' aria-label="Ir a la medición ' + (i + 1) + '">' + m.n + '</button></td>'
+        + '<td>' + esc(m.departamento) + '</td><td class="num">' + m.se + '</td><td class="num">' + m.anio + '</td>'
+        + '<td class="' + (m.metodo === EPI.TRADICIONAL ? 'trad' : 'epi') + '">' + esc(m.metodo) + '</td>'
+        + '<td>' + m.orden + '.º</td>'
+        + '<td class="num">' + (m.inicioMs == null ? guion : EPI.formatHora(m.inicioMs)) + '</td>'
+        + '<td class="num">' + (m.finMs == null ? (est === 'en_curso' ? 'En curso' : guion) : EPI.formatHora(m.finMs)) + '</td>'
+        + '<td class="num">' + (m.tiempoS == null ? guion : m.tiempoS) + '</td>'
+        + '<td class="' + (m.noEncontrado ? 'ne' : '') + '">' + (!medida ? guion : (m.noEncontrado ? 'Sí' : 'No')) + '</td>'
+        + '<td>' + esc(m.observaciones) + '</td>'
+        + '<td class="num">' + m.repeticiones + '</td></tr>';
+    }).join('');
+
+    return '<main class="pantalla">'
+      + '<h1 class="encabezado">Resumen de la sesión</h1>'
+      + '<section class="tarjeta"><dl class="info">'
+      + '<dt>Versión</dt><dd>' + esc(EPI.VERSIONES[estado.version].etiqueta) + '</dd>'
+      + '<dt>Operador</dt><dd>' + esc(estado.operador) + '</dd>'
+      + '<dt>Supervisor</dt><dd>' + esc(estado.supervisor) + '</dd>'
+      + '<dt>Fecha</dt><dd>' + esc(estado.fecha) + '</dd>'
+      + '<dt>Lugar</dt><dd>' + (estado.lugar ? esc(estado.lugar) : '&mdash;') + '</dd>'
+      + '<dt>Inicio de sesión</dt><dd>' + EPI.formatHora(estado.sesionInicioMs) + '</dd>'
+      + '<dt>Fin de sesión</dt><dd>' + (estado.sesionFinMs == null ? 'Sin finalizar' : EPI.formatHora(estado.sesionFinMs)) + '</dd>'
+      + '<dt>Avance</dt><dd>' + p.completadas + ' de ' + p.total + ' mediciones completas</dd>'
+      + '<dt>Repeticiones</dt><dd>' + estado.registro.length + '</dd></dl></section>'
+      + '<button type="button" class="btn btn-principal" data-accion="volver-medicion">Volver a la medición' + (enCurso !== -1 ? ' (hay una en curso)' : '') + '</button>'
+      + '<div class="tabla-cont"><table class="tabla"><thead><tr>'
+      + '<th class="num">N.º</th><th>Departamento</th><th class="num">SE</th><th class="num">Año</th><th>Método</th><th>Orden</th>'
+      + '<th class="num">Hora de inicio</th><th class="num">Hora de fin</th><th class="num">Tiempo (s)</th><th>No encontrado</th><th>Observaciones</th><th class="num">Rep.</th>'
+      + '</tr></thead><tbody>' + filas + '</tbody></table></div>'
+      + '<div class="fila fila-envuelta">'
+      + '<button type="button" class="btn" data-accion="exportar-csv">Exportar CSV</button>'
+      + '<button type="button" class="btn" data-accion="exportar-json">Exportar JSON</button></div>'
+      + '<button type="button" class="btn" data-accion="finalizar">Finalizar sesión</button>'
+      + '<button type="button" class="btn" data-accion="nueva">Nueva sesión</button>'
+      + '</main>';
+  }
+
+  function render() {
+    const app = $('app');
+    app.className = vista === 'resumen' ? 'ancha' : '';
+    if (vista === 'medicion' && estado) app.innerHTML = htmlMedicion();
+    else if (vista === 'resumen' && estado) app.innerHTML = htmlResumen();
+    else { vista = 'inicio'; app.innerHTML = htmlInicio(); }
+    const clave = vista + ':' + (estado ? estado.actual : '') + ':' + modoNueva;
+    if (clave !== claveScroll) { claveScroll = clave; window.scrollTo(0, 0); }
+    actualizarEstadoPantalla();
+    sincronizar();
+  }
+
+  // ---------- Contador ----------
+
+  function pintarContador(m, ahora) {
+    const el = $('contador');
+    if (!el) return;
+    const seg = EPI.segundosTranscurridos(m.inicioMs, ahora);
+    const clase = 'contador en_curso nivel-' + EPI.nivelContador(seg);
+    if (el.className !== clase) el.className = clase;
+    const valor = $('contador-valor');
+    const texto = EPI.formatContador(seg);
+    if (valor.textContent !== texto) valor.textContent = texto;
+    const msg = $('contador-msg');
+    const t = textoContador(m, seg);
+    if (msg.textContent !== t) msg.textContent = t;
+  }
+
+  function tick() {
+    if (!estado) return;
+    const idx = EPI.indiceEnCurso(estado);
+    if (idx === -1) return;
+    const ahora = Date.now();
+    const m = estado.mediciones[idx];
+    if (EPI.limiteAlcanzado(m.inicioMs, ahora)) {
+      aplicar(EPI.accionAutoCorte(estado, ahora));
+      alertaLimite();
+      return;
+    }
+    if (vista === 'medicion') pintarContador(m, ahora);
+  }
+
+  function sincronizar() {
+    const enCurso = estado && EPI.indiceEnCurso(estado) !== -1;
+    if (enCurso && !ticker) ticker = setInterval(tick, 100);
+    if (!enCurso && ticker) { clearInterval(ticker); ticker = null; }
+    if (enCurso) tick();
+  }
+
+  // ---------- Exportar ----------
+
+  function descargar(nombre, contenido, tipo) {
+    const url = URL.createObjectURL(new Blob([contenido], { type: tipo }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 15000);
+  }
+
+  function exportarCSV() {
+    const nombre = EPI.nombreArchivo(estado, 'csv');
+    descargar(nombre, EPI.generarCSV(estado), 'text/csv;charset=utf-8');
+    avisar('Descargado: ' + nombre);
+  }
+
+  function exportarJSON() {
+    const nombre = EPI.nombreArchivo(estado, 'json');
+    descargar(nombre, EPI.generarJSON(estado, Date.now()), 'application/json;charset=utf-8');
+    avisar('Descargado: ' + nombre);
+  }
+
+  // ---------- Acciones de la interfaz ----------
+
+  function principal() {
+    if (modalAbierto || vista !== 'medicion' || !estado) return;
+    const a = EPI.accionPrincipal(medActual());
+    if (a === 'iniciar') {
+      prepararAudio();
+      pedirWakeLock();
+      aplicar(EPI.accionIniciar(estado, Date.now()));
+    } else if (a === 'detener') {
+      aplicar(EPI.accionDetener(estado, Date.now()));
+    }
+  }
+
+  function siguiente() {
+    if (estado.actual >= estado.mediciones.length - 1) { vista = 'resumen'; render(); return; }
+    aplicar(EPI.accionIr(estado, estado.actual + 1));
+  }
+
+  async function repetir() {
+    const m = medActual();
+    const r = await dialogo({
+      titulo: 'Repetir medición',
+      mensaje: 'El intento actual (' + (estadoMedicion(m) === 'en_curso' ? 'en curso' : EPI.formatHora(m.inicioMs) + ' a ' + EPI.formatHora(m.finMs) + ', ' + m.tiempoS + ' s')
+        + ') se guardará en el registro de repeticiones y la medición quedará lista para empezar de nuevo.',
+      botones: [{ texto: 'Cancelar', valor: 'cancelar' }, { texto: 'Repetir medición', clase: 'btn-stop', valor: 'ok' }]
+    });
+    if (r === 'ok') aplicar(EPI.accionRepetir(estado, Date.now()));
+  }
+
+  async function nuevaSesion() {
+    const r = await dialogo({
+      titulo: 'Nueva sesión',
+      mensaje: 'La sesión guardada se reemplazará cuando comience la nueva. Si la necesita, expórtela antes.',
+      botones: [
+        { texto: 'Exportar CSV de la sesión actual', accion: exportarCSV },
+        { texto: 'Exportar JSON de la sesión actual', accion: exportarJSON },
+        { texto: 'Cancelar', valor: 'cancelar' },
+        { texto: 'Continuar con nueva sesión', clase: 'btn-stop', valor: 'ok' }
+      ]
+    });
+    if (r === 'ok') { modoNueva = true; borrador = borradorVacio(); vista = 'inicio'; render(); }
+  }
+
+  async function finalizar() {
+    if (EPI.indiceEnCurso(estado) !== -1) { avisar('Detenga la medición en curso antes de finalizar.'); return; }
+    const p = EPI.progreso(estado);
+    if (p.completadas < p.total) {
+      const r = await dialogo({
+        titulo: 'Finalizar sesión',
+        mensaje: 'Faltan ' + (p.total - p.completadas) + ' mediciones por completar. ¿Finalizar la sesión de todas formas?',
+        botones: [{ texto: 'Cancelar', valor: 'cancelar' }, { texto: 'Finalizar', clase: 'btn-stop', valor: 'ok' }]
+      });
+      if (r !== 'ok') return;
+    }
+    aplicar(EPI.accionFinalizar(estado, Date.now()));
+    avisar('Sesión finalizada.');
+  }
+
+  function manejar(accion, el) {
+    switch (accion) {
+      case 'principal': principal(); break;
+      case 'siguiente': siguiente(); break;
+      case 'anterior': aplicar(EPI.accionIr(estado, estado.actual - 1)); break;
+      case 'resumen': vista = 'resumen'; render(); break;
+      case 'volver-medicion': vista = 'medicion'; render(); break;
+      case 'ir': vista = 'medicion'; aplicar(EPI.accionIr(estado, Number(el.dataset.idx))); break;
+      case 'noencontrado': aplicar(EPI.accionNoEncontrado(estado)); break;
+      case 'deshacer': aplicar(EPI.accionDeshacer(estado)); break;
+      case 'repetir': repetir(); break;
+      case 'exportar-csv': exportarCSV(); break;
+      case 'exportar-json': exportarJSON(); break;
+      case 'finalizar': finalizar(); break;
+      case 'nueva': nuevaSesion(); break;
+      case 'continuar': vista = 'medicion'; pedirWakeLock(); prepararAudio(); render(); break;
+      case 'cancelar-nueva': modoNueva = false; render(); break;
+    }
+  }
+
+  // ---------- Eventos ----------
+
+  document.addEventListener('click', (ev) => {
+    const el = ev.target.closest('[data-accion]');
+    if (!el || el.disabled || modalAbierto) return;
+    manejar(el.dataset.accion, el);
+  });
+
+  document.addEventListener('input', (ev) => {
+    const campoNombre = ev.target && ev.target.dataset && ev.target.dataset.campo;
+    if (!campoNombre) return;
+    if (campoNombre === 'obs') {
+      if (estado && vista === 'medicion') { estado = EPI.accionObservaciones(estado, ev.target.value); guardar(); }
+    } else if (campoNombre !== 'version') {
+      borrador[campoNombre] = ev.target.value;
+      if ($('error-form')) $('error-form').textContent = '';
+    }
+  });
+
+  document.addEventListener('change', (ev) => {
+    if (ev.target && ev.target.dataset && ev.target.dataset.campo === 'version') {
+      borrador.version = ev.target.value;
+      if ($('error-form')) $('error-form').textContent = '';
+    }
+  });
+
+  document.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    if (!ev.target || ev.target.id !== 'form-sesion') return;
+    const errores = EPI.validarDatosSesion(borrador);
+    if (errores.length) { $('error-form').textContent = errores.join(' '); return; }
+    estado = EPI.crearSesion(borrador, Date.now());
+    modoNueva = false;
+    vista = 'medicion';
+    guardar();
+    pedirWakeLock();
+    prepararAudio();
+    render();
+  });
+
+  // Barra espaciadora = Iniciar / Detener (en laptop). No actúa dentro de campos de texto ni con un diálogo abierto.
+  const esCampoTexto = (t) => t && (t.tagName === 'TEXTAREA' || t.tagName === 'SELECT'
+    || (t.tagName === 'INPUT' && t.type !== 'radio' && t.type !== 'checkbox' && t.type !== 'button'));
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== ' ' || ev.ctrlKey || ev.altKey || ev.metaKey || esCampoTexto(ev.target) || modalAbierto) return;
+    if (vista !== 'medicion') return;
+    ev.preventDefault();
+    if (!ev.repeat) principal();
+  });
+  document.addEventListener('keyup', (ev) => {
+    // Evita que la barra espaciadora también "haga clic" en el botón enfocado.
+    if (ev.key === ' ' && !esCampoTexto(ev.target) && vista === 'medicion') ev.preventDefault();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    tick();
+    if (estado && vista !== 'inicio') pedirWakeLock();
+  });
+  window.addEventListener('pageshow', tick);
+
+  // Si otra pestaña modifica la sesión, esta se actualiza en vez de pisarla.
+  window.addEventListener('storage', (ev) => {
+    if (ev.key !== CLAVE || modalAbierto) return;
+    estado = cargar();
+    if (!estado) { vista = 'inicio'; }
+    render();
+  });
+
+  // ---------- Arranque ----------
+
+  estado = cargar();
+  // Con una medición en curso se va directo a ella: sigue corriendo desde su hora de inicio original.
+  vista = estado && EPI.indiceEnCurso(estado) !== -1 ? 'medicion' : 'inicio';
+  if (vista === 'medicion') estado.actual = EPI.indiceEnCurso(estado);
+  render();
+  if (vista === 'medicion') pedirWakeLock();
+})();
+</script>
+</body>
+</html>
